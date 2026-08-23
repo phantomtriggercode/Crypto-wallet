@@ -7,6 +7,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Select, Label } from "@/components/ui/input";
 import { apiFetch, ApiClientError } from "@/lib/apiClient";
+import { useDragReorder } from "@/lib/hooks/useDragReorder";
+import { DragHandle } from "@/components/admin/drag-handle";
 
 const WIDGET_TYPE_INFO: Record<string, { label: string; defaultConfig: Record<string, unknown> }> = {
   ASSET_PRICE: { label: "Asset Price", defaultConfig: { symbol: "BTC" } },
@@ -73,14 +75,20 @@ export default function AdminWidgetsPage() {
     load();
   }
 
+  async function persistOrder(next: Widget[]) {
+    setWidgets(next);
+    await apiFetch("/api/admin/widgets/reorder", { method: "POST", body: JSON.stringify({ ids: next.map((w) => w.id) }) });
+  }
+
   async function move(index: number, direction: -1 | 1) {
     const next = [...widgets];
     const target = index + direction;
     if (target < 0 || target >= next.length) return;
     [next[index], next[target]] = [next[target], next[index]];
-    setWidgets(next);
-    await apiFetch("/api/admin/widgets/reorder", { method: "POST", body: JSON.stringify({ ids: next.map((w) => w.id) }) });
+    await persistOrder(next);
   }
+
+  const { dragHandleProps, dropTargetProps } = useDragReorder(widgets, persistOrder);
 
   return (
     <div className="mx-auto max-w-3xl space-y-4">
@@ -120,6 +128,8 @@ export default function AdminWidgetsPage() {
             onDelete={() => remove(w.id)}
             onMoveUp={() => move(i, -1)}
             onMoveDown={() => move(i, 1)}
+            dragHandleProps={dragHandleProps(i)}
+            dropTargetProps={dropTargetProps(i)}
           />
         ))}
       </div>
@@ -133,20 +143,27 @@ function WidgetRow({
   onDelete,
   onMoveUp,
   onMoveDown,
+  dragHandleProps,
+  dropTargetProps,
 }: {
   widget: Widget;
   onUpdate: (changes: Partial<Widget>) => void;
   onDelete: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
+  dragHandleProps: React.HTMLAttributes<HTMLElement>;
+  dropTargetProps: React.HTMLAttributes<HTMLElement>;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [title, setTitle] = useState(widget.title ?? "");
   const [config, setConfig] = useState(widget.config ?? {});
 
   return (
-    <Card>
+    <Card {...dropTargetProps}>
       <div className="flex items-center justify-between gap-2">
+        <span {...dragHandleProps}>
+          <DragHandle />
+        </span>
         <button className="flex-1 text-left" onClick={() => setExpanded((s) => !s)}>
           <p className="text-sm font-medium">{WIDGET_TYPE_INFO[widget.type]?.label ?? widget.type}</p>
           <p className="text-xs text-muted">{widget.title}</p>

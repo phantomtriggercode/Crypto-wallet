@@ -6,6 +6,9 @@ import { Plus, Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Textarea } from "@/components/ui/input";
+import { RichTextEditor } from "@/components/admin/rich-text-editor";
+import { DragHandle } from "@/components/admin/drag-handle";
+import { useDragReorder } from "@/lib/hooks/useDragReorder";
 import { apiFetch, ApiClientError } from "@/lib/apiClient";
 
 type StaticPageContent = {
@@ -20,6 +23,9 @@ export default function AdminCmsPageEditor({ params }: { params: Promise<{ slug:
   const { slug } = usePromise(params);
   const [content, setContent] = useState<StaticPageContent | null>(null);
   const [saving, setSaving] = useState(false);
+  const { dragHandleProps, dropTargetProps } = useDragReorder(content?.sections ?? [], (sections) =>
+    setContent((c) => (c ? { ...c, sections } : c))
+  );
 
   useEffect(() => {
     apiFetch<{ content: StaticPageContent }>(`/api/admin/cms/pages/${slug}`).then((res) => setContent(res.content));
@@ -55,8 +61,12 @@ export default function AdminCmsPageEditor({ params }: { params: Promise<{ slug:
           <Input value={content.title} onChange={(e) => setContent({ ...content, title: e.target.value })} />
         </div>
         <div>
-          <Label>Intro text (blank line separates paragraphs)</Label>
-          <Textarea rows={8} value={content.intro} onChange={(e) => setContent({ ...content, intro: e.target.value })} />
+          <Label>Intro text</Label>
+          <RichTextEditor
+            value={content.intro}
+            onChange={(html) => setContent({ ...content, intro: html })}
+            placeholder="Write the intro for this page…"
+          />
         </div>
       </Card>
 
@@ -72,7 +82,14 @@ export default function AdminCmsPageEditor({ params }: { params: Promise<{ slug:
           </Button>
         </div>
         {content.sections.map((s, i) => (
-          <div key={i} className="flex gap-2 border-t border-border pt-3 first:border-0 first:pt-0">
+          <div
+            key={i}
+            className="flex gap-2 border-t border-border pt-3 first:border-0 first:pt-0"
+            {...dropTargetProps(i)}
+          >
+            <span {...dragHandleProps(i)} className="pt-1">
+              <DragHandle />
+            </span>
             <div className="flex-1 space-y-1">
               <Input
                 placeholder="Heading"
@@ -83,15 +100,14 @@ export default function AdminCmsPageEditor({ params }: { params: Promise<{ slug:
                   setContent({ ...content, sections });
                 }}
               />
-              <Textarea
-                rows={3}
-                placeholder="Body"
+              <RichTextEditor
                 value={s.body}
-                onChange={(e) => {
+                onChange={(html) => {
                   const sections = [...content.sections];
-                  sections[i] = { ...s, body: e.target.value };
+                  sections[i] = { ...s, body: html };
                   setContent({ ...content, sections });
                 }}
+                placeholder="Section body…"
               />
             </div>
             <Button

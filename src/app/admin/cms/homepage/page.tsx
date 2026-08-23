@@ -7,6 +7,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Textarea } from "@/components/ui/input";
 import { apiFetch, ApiClientError } from "@/lib/apiClient";
+import { useDragReorder } from "@/lib/hooks/useDragReorder";
+import { DragHandle } from "@/components/admin/drag-handle";
 
 type SectionKey = "features" | "widgets" | "market" | "escrow" | "security" | "news" | "faq";
 
@@ -51,6 +53,9 @@ const SECTION_TOGGLE_KEY: Partial<Record<SectionKey, keyof HomepageContent>> = {
 export default function CmsHomepagePage() {
   const [content, setContent] = useState<HomepageContent | null>(null);
   const [saving, setSaving] = useState(false);
+  const { dragHandleProps, dropTargetProps } = useDragReorder(content?.sectionOrder ?? [], (order) =>
+    setContent((c) => (c ? { ...c, sectionOrder: order } : c))
+  );
 
   useEffect(() => {
     apiFetch<{ content: HomepageContent }>("/api/cms/homepage").then((res) => setContent(res.content));
@@ -181,13 +186,24 @@ export default function CmsHomepagePage() {
 
       <Card className="space-y-2">
         <h2 className="mb-1 text-sm font-semibold">Sections</h2>
-        <p className="mb-2 text-xs text-muted">Order the sections that appear below the hero, and toggle each on or off.</p>
+        <p className="mb-2 text-xs text-muted">
+          Drag to reorder the sections that appear below the hero (or use the arrows), and toggle each on or off.
+        </p>
         {content.sectionOrder.map((key, i) => {
           const toggleKey = SECTION_TOGGLE_KEY[key];
           const enabled = toggleKey ? Boolean(content[toggleKey]) : true;
           return (
-            <div key={key} className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
-              <span className="text-sm">{SECTION_LABELS[key]}</span>
+            <div
+              key={key}
+              className="flex items-center justify-between gap-2 rounded-lg border border-border px-2 py-2"
+              {...dropTargetProps(i)}
+            >
+              <div className="flex items-center gap-1">
+                <span {...dragHandleProps(i)}>
+                  <DragHandle />
+                </span>
+                <span className="text-sm">{SECTION_LABELS[key]}</span>
+              </div>
               <div className="flex items-center gap-1">
                 <Button
                   size="sm"

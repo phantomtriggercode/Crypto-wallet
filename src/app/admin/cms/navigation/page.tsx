@@ -7,6 +7,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Textarea } from "@/components/ui/input";
 import { apiFetch, ApiClientError } from "@/lib/apiClient";
+import { useDragReorder } from "@/lib/hooks/useDragReorder";
+import { DragHandle } from "@/components/admin/drag-handle";
 
 type NavLink = { label: string; href: string };
 type Settings = { navLinks: NavLink[]; footerTagline: string };
@@ -14,6 +16,9 @@ type Settings = { navLinks: NavLink[]; footerTagline: string };
 export default function AdminNavigationPage() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [saving, setSaving] = useState(false);
+  const { dragHandleProps, dropTargetProps } = useDragReorder(settings?.navLinks ?? [], (links) =>
+    setSettings((s) => (s ? { ...s, navLinks: links } : s))
+  );
 
   useEffect(() => {
     apiFetch<{ settings: Settings }>("/api/admin/settings").then((res) => setSettings(res.settings));
@@ -67,7 +72,10 @@ export default function AdminNavigationPage() {
           These links appear in the top navigation bar and the footer&apos;s Product column, on every public page.
         </p>
         {settings.navLinks.map((link, i) => (
-          <div key={i} className="flex items-center gap-2">
+          <div key={i} className="flex items-center gap-2" {...dropTargetProps(i)}>
+            <span {...dragHandleProps(i)}>
+              <DragHandle />
+            </span>
             <Input
               placeholder="Label"
               value={link.label}
