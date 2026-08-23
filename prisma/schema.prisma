@@ -1,0 +1,748 @@
+// Prisma schema for the educational/manual crypto wallet platform.
+// IMPORTANT: This schema models an internal simulated ledger only.
+// No fields here represent real blockchain custody, real private keys,
+// or real transaction broadcasting.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Users, auth, sessions, security
+// ---------------------------------------------------------------------------
+
+enum KycStatus {
+  NOT_STARTED
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  MORE_INFO_REQUIRED
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  FINANCE_ADMIN
+  KYC_ADMIN
+  SUPPORT_ADMIN
+  CONTENT_ADMIN
+  SECURITY_ADMIN
+}
+
+enum AccountStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+model User {
+  id                String   @id @default(cuid())
+  fullName          String
+  email             String   @unique
+  passwordHash      String
+  phone             String?
+  country           String?
+  status            AccountStatus @default(ACTIVE)
+  emailVerifiedAt   DateTime?
+
+  isAdmin           Boolean  @default(false)
+  adminRoles        UserAdminRole[]
+
+  kycStatus         KycStatus @default(NOT_STARTED)
+
+  twoFactorEnabled  Boolean  @default(false)
+  twoFactorSecret   String?  // encrypted at rest, never returned to clients
+  twoFactorMethod   String?  // "TOTP" | "EMAIL"
+
+  // Simulated recovery phrase support (educational only).
+  // Only a salted hash is ever stored; admins cannot read the phrase.
+  recoveryPhraseHash String?
+  recoveryPhraseSetAt DateTime?
+
+  depositsLocked    Boolean  @default(false)
+  withdrawalsLocked Boolean  @default(false)
+  swapsLocked       Boolean  @default(false)
+  escrowLocked      Boolean  @default(false)
+  require2FA        Boolean  @default(false)
+  requireKyc        Boolean  @default(true)
+
+  internalNote      String?  @db.Text
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  lastLoginAt       DateTime?
+
+  sessions          Session[]
+  emailTokens       EmailVerificationToken[]
+  resetTokens       PasswordResetToken[]
+  backupCodes       BackupCode[]
+  balances          Balance[]
+  ledgerEntries     LedgerEntry[]
+  deposits          Deposit[]
+  withdrawals       Withdrawal[]
+  swaps             Swap[]
+  escrowAsBuyer     EscrowDeal[] @relation("EscrowBuyer")
+  escrowAsSeller    EscrowDeal[] @relation("EscrowSeller")
+  kycApplications   KycApplication[]
+  notifications     Notification[]
+  securityEvents    SecurityEvent[]
+  supportTickets    SupportTicket[]
+  auditLogsActed    AuditLog[] @relation("AuditActor")
+
+  @@index([email])
+}
+
+model UserAdminRole {
+  id      String    @id @default(cuid())
+  userId  String
+  role    AdminRole
+  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, role])
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Session {
+  id         String   @id @default(cuid())
+  userId     String
+  tokenHash  String   @unique
+  userAgent  String?
+  ip         String?
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  lastSeenAt DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model BackupCode {
+  id        String    @id @default(cuid())
+  userId    String
+  codeHash  String
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model SecurityEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // LOGIN, LOGIN_FAILED, PASSWORD_CHANGE, 2FA_ENABLED, ...
+  ip        String?
+  userAgent String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Assets & networks
+// ---------------------------------------------------------------------------
+
+model Asset {
+  id                String   @id @default(cuid())
+  symbol            String   @unique
+  name              String
+  iconUrl           String?
+  description       String?  @db.Text
+  decimals          Int      @default(8)
+
+  enabled           Boolean  @default(true)
+  depositEnabled    Boolean  @default(true)
+  withdrawalEnabled Boolean  @default(true)
+  swapEnabled       Boolean  @default(true)
+  escrowEnabled     Boolean  @default(true)
+
+  displayOrder      Int      @default(0)
+
+  demoPrice         Decimal  @db.Decimal(24, 8) @default(0)
+  priceChange24h    Decimal  @db.Decimal(10, 4) @default(0)
+  marketCap         Decimal  @db.Decimal(24, 2) @default(0)
+  volume24h         Decimal  @db.Decimal(24, 2) @default(0)
+  priceMode         String   @default("MANUAL") // MANUAL | LIVE
+
+  minDeposit        Decimal  @db.Decimal(24, 8) @default(0)
+  minWithdrawal     Decimal  @db.Decimal(24, 8) @default(0)
+  depositFeeFixed   Decimal  @db.Decimal(24, 8) @default(0)
+  withdrawalFeeFixed Decimal @db.Decimal(24, 8) @default(0)
+  withdrawalFeePercent Decimal @db.Decimal(10, 4) @default(0)
+  swapFeePercent    Decimal  @db.Decimal(10, 4) @default(0)
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  networks          Network[]
+  balances          Balance[]
+  ledgerEntries     LedgerEntry[]
+  deposits          Deposit[]
+  withdrawals       Withdrawal[]
+  priceHistory      PriceHistory[]
+  swapsFrom         Swap[] @relation("SwapFromAsset")
+  swapsTo           Swap[] @relation("SwapToAsset")
+  escrowDeals       EscrowDeal[]
+  pairsAsBase       ExchangePair[] @relation("PairBase")
+  pairsAsQuote      ExchangePair[] @relation("PairQuote")
+
+  @@index([displayOrder])
+}
+
+model Network {
+  id                     String   @id @default(cuid())
+  assetId                String
+  name                   String
+  symbol                 String
+  description            String?
+  depositAddress         String
+  qrCodeUrl              String?
+  minDeposit             Decimal  @db.Decimal(24, 8) @default(0)
+  confirmationTimerMinutes Int    @default(30)
+  enabled                Boolean  @default(true)
+  isDefault              Boolean  @default(false)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  asset                  Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  deposits               Deposit[]
+  withdrawals            Withdrawal[]
+
+  @@index([assetId])
+}
+
+// ---------------------------------------------------------------------------
+// Ledger (source of truth for all balances)
+// ---------------------------------------------------------------------------
+
+enum LedgerEntryType {
+  DEPOSIT
+  WITHDRAWAL
+  SWAP_CREDIT
+  SWAP_DEBIT
+  ESCROW_LOCK
+  ESCROW_RELEASE
+  ESCROW_REFUND
+  FEE
+  MANUAL_CREDIT
+  MANUAL_DEBIT
+  REVERSAL
+}
+
+enum LedgerDirection {
+  CREDIT
+  DEBIT
+}
+
+model LedgerEntry {
+  id               String          @id @default(cuid())
+  userId           String
+  assetId          String
+  type             LedgerEntryType
+  direction        LedgerDirection
+  amount           Decimal         @db.Decimal(36, 18)
+  balanceAfter     Decimal         @db.Decimal(36, 18)
+  referenceType    String          // Deposit | Withdrawal | Swap | Escrow | Manual | Fee | Reversal
+  referenceId      String?
+  reason           String?         @db.Text
+  internalNote     String?         @db.Text
+  createdByAdminId String?
+  createdAt        DateTime        @default(now())
+
+  user             User            @relation(fields: [userId], references: [id])
+  asset            Asset           @relation(fields: [assetId], references: [id])
+
+  @@index([userId, assetId])
+  @@index([referenceType, referenceId])
+}
+
+model Balance {
+  id        String   @id @default(cuid())
+  userId    String
+  assetId   String
+  available Decimal  @db.Decimal(36, 18) @default(0)
+  locked    Decimal  @db.Decimal(36, 18) @default(0)
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  asset     Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, assetId])
+}
+
+// ---------------------------------------------------------------------------
+// Deposits
+// ---------------------------------------------------------------------------
+
+enum DepositStatus {
+  PENDING_REVIEW
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  CREDITED
+}
+
+model Deposit {
+  id                String        @id @default(cuid())
+  depositRef        String        @unique
+  userId            String
+  assetId           String
+  networkId         String
+  amount            Decimal       @db.Decimal(36, 18)
+  receivingAddress  String
+  txHash            String?
+  senderAddress     String?
+  notes             String?       @db.Text
+  status            DepositStatus @default(PENDING_REVIEW)
+  adminNote         String?       @db.Text
+  reviewedByAdminId String?
+  reviewedAt        DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  user              User          @relation(fields: [userId], references: [id])
+  asset             Asset         @relation(fields: [assetId], references: [id])
+  network           Network       @relation(fields: [networkId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+}
+
+// ---------------------------------------------------------------------------
+// Withdrawals
+// ---------------------------------------------------------------------------
+
+enum WithdrawalStatus {
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  ON_HOLD
+  MORE_INFO_REQUIRED
+  COMPLETED
+}
+
+model Withdrawal {
+  id                   String           @id @default(cuid())
+  withdrawalRef        String           @unique
+  userId               String
+  assetId              String
+  networkId            String
+  destinationAddress   String
+  amount               Decimal          @db.Decimal(36, 18)
+  networkFee           Decimal          @db.Decimal(36, 18) @default(0)
+  platformFee          Decimal          @db.Decimal(36, 18) @default(0)
+  totalDeducted        Decimal          @db.Decimal(36, 18)
+  status               WithdrawalStatus @default(PENDING_APPROVAL)
+  internalTxReference  String?
+  adminNote            String?          @db.Text
+  reviewedByAdminId    String?
+  reviewedAt           DateTime?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  user                 User             @relation(fields: [userId], references: [id])
+  asset                Asset            @relation(fields: [assetId], references: [id])
+  network              Network          @relation(fields: [networkId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+}
+
+// ---------------------------------------------------------------------------
+// Exchange / swap
+// ---------------------------------------------------------------------------
+
+model ExchangePair {
+  id                    String   @id @default(cuid())
+  baseAssetId           String
+  quoteAssetId          String
+  buyRate               Decimal  @db.Decimal(36, 18)
+  sellRate              Decimal  @db.Decimal(36, 18)
+  spreadPercent         Decimal  @db.Decimal(10, 4) @default(0)
+  platformFeePercent    Decimal  @db.Decimal(10, 4) @default(0)
+  minAmount             Decimal  @db.Decimal(36, 18) @default(0)
+  maxAmount             Decimal  @db.Decimal(36, 18) @default(0)
+  enabled               Boolean  @default(true)
+  requireManualApproval Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  baseAsset             Asset    @relation("PairBase", fields: [baseAssetId], references: [id])
+  quoteAsset            Asset    @relation("PairQuote", fields: [quoteAssetId], references: [id])
+
+  @@unique([baseAssetId, quoteAssetId])
+}
+
+enum SwapStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+model Swap {
+  id           String     @id @default(cuid())
+  swapRef      String     @unique
+  userId       String
+  fromAssetId  String
+  toAssetId    String
+  fromAmount   Decimal    @db.Decimal(36, 18)
+  toAmount     Decimal    @db.Decimal(36, 18)
+  rate         Decimal    @db.Decimal(36, 18)
+  platformFee  Decimal    @db.Decimal(36, 18) @default(0)
+  status       SwapStatus @default(PENDING)
+  adminNote    String?    @db.Text
+  reviewedByAdminId String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  user         User       @relation(fields: [userId], references: [id])
+  fromAsset    Asset      @relation("SwapFromAsset", fields: [fromAssetId], references: [id])
+  toAsset      Asset      @relation("SwapToAsset", fields: [toAssetId], references: [id])
+
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Escrow
+// ---------------------------------------------------------------------------
+
+enum EscrowStatus {
+  CREATED
+  FUNDED
+  SELLER_COMPLETED
+  AWAITING_ADMIN_RELEASE
+  RELEASED
+  REFUNDED
+  DISPUTED
+  CANCELLED
+}
+
+model EscrowDeal {
+  id          String       @id @default(cuid())
+  escrowRef   String       @unique
+  title       String
+  buyerId     String
+  sellerId    String
+  assetId     String
+  amount      Decimal      @db.Decimal(36, 18)
+  description String?      @db.Text
+  terms       String?      @db.Text
+  status      EscrowStatus @default(CREATED)
+  expiresAt   DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  buyer       User         @relation("EscrowBuyer", fields: [buyerId], references: [id])
+  seller      User         @relation("EscrowSeller", fields: [sellerId], references: [id])
+  asset       Asset        @relation(fields: [assetId], references: [id])
+  events      EscrowEvent[]
+  disputes    EscrowDispute[]
+
+  @@index([buyerId])
+  @@index([sellerId])
+}
+
+model EscrowEvent {
+  id           String     @id @default(cuid())
+  escrowDealId String
+  type         String
+  actorUserId  String?
+  actorAdminId String?
+  note         String?    @db.Text
+  createdAt    DateTime   @default(now())
+
+  escrowDeal   EscrowDeal @relation(fields: [escrowDealId], references: [id], onDelete: Cascade)
+
+  @@index([escrowDealId])
+}
+
+enum DisputeStatus {
+  OPEN
+  RESOLVED
+}
+
+model EscrowDispute {
+  id               String        @id @default(cuid())
+  escrowDealId     String
+  openedByUserId   String
+  reason           String        @db.Text
+  status           DisputeStatus @default(OPEN)
+  resolution       String?       // RELEASE_TO_SELLER | REFUND_BUYER | PARTIAL | KEEP_LOCKED
+  resolutionNote   String?       @db.Text
+  resolvedByAdminId String?
+  createdAt        DateTime      @default(now())
+  resolvedAt       DateTime?
+
+  escrowDeal       EscrowDeal    @relation(fields: [escrowDealId], references: [id], onDelete: Cascade)
+  messages         EscrowDisputeMessage[]
+
+  @@index([escrowDealId])
+}
+
+model EscrowDisputeMessage {
+  id             String        @id @default(cuid())
+  disputeId      String
+  senderUserId   String?
+  senderAdminId  String?
+  message        String        @db.Text
+  attachmentUrl  String?
+  createdAt      DateTime      @default(now())
+
+  dispute        EscrowDispute @relation(fields: [disputeId], references: [id], onDelete: Cascade)
+
+  @@index([disputeId])
+}
+
+// ---------------------------------------------------------------------------
+// KYC
+// ---------------------------------------------------------------------------
+
+model KycApplication {
+  id                String    @id @default(cuid())
+  userId            String
+  legalName         String
+  dateOfBirth       DateTime
+  country           String
+  address           String    @db.Text
+  status            KycStatus @default(PENDING)
+  reviewReason      String?   @db.Text
+  reviewedByAdminId String?
+  reviewedAt        DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  user              User      @relation(fields: [userId], references: [id])
+  documents         KycDocument[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model KycDocument {
+  id               String   @id @default(cuid())
+  kycApplicationId String
+  type             String   // GOVERNMENT_ID | SELFIE | PROOF_OF_ADDRESS | OTHER
+  storageKey       String   // private storage path, never a public URL
+  originalName     String?
+  mimeType         String?
+  size             Int?
+  uploadedAt       DateTime @default(now())
+
+  kycApplication   KycApplication @relation(fields: [kycApplicationId], references: [id], onDelete: Cascade)
+
+  @@index([kycApplicationId])
+}
+
+// ---------------------------------------------------------------------------
+// Notifications & communication
+// ---------------------------------------------------------------------------
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  message   String   @db.Text
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+}
+
+model EmailTemplate {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  subject   String
+  bodyHtml  String   @db.Text
+  updatedAt DateTime @updatedAt
+}
+
+model SmtpSetting {
+  id                Int      @id @default(1)
+  host              String?
+  port              Int?
+  encryption        String?  // NONE | SSL | TLS
+  username          String?
+  passwordEncrypted String?
+  fromName          String?
+  fromEmail         String?
+  updatedAt         DateTime @updatedAt
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  message   String   @db.Text
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// CMS / branding / settings
+// ---------------------------------------------------------------------------
+
+model SystemSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+model CmsPage {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  contentJson Json
+  enabled     Boolean  @default(true)
+  updatedAt   DateTime @updatedAt
+}
+
+model CmsSection {
+  id        String   @id @default(cuid())
+  page      String
+  key       String
+  enabled   Boolean  @default(true)
+  order     Int      @default(0)
+  dataJson  Json
+  updatedAt DateTime @updatedAt
+
+  @@unique([page, key])
+}
+
+model Media {
+  id               String   @id @default(cuid())
+  filename         String
+  url              String
+  mimeType         String?
+  size             Int?
+  folder           String   @default("general")
+  uploadedByAdminId String?
+  createdAt        DateTime @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// Market data & news
+// ---------------------------------------------------------------------------
+
+model PriceHistory {
+  id        String   @id @default(cuid())
+  assetId   String
+  price     Decimal  @db.Decimal(24, 8)
+  timestamp DateTime @default(now())
+
+  asset     Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId, timestamp])
+}
+
+model NewsArticle {
+  id          String    @id @default(cuid())
+  headline    String
+  imageUrl    String?
+  publisher   String?
+  sourceUrl   String?
+  summary     String?   @db.Text
+  category    String?
+  featured    Boolean   @default(false)
+  publishedAt DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// Support
+// ---------------------------------------------------------------------------
+
+enum TicketStatus {
+  OPEN
+  PENDING
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+model SupportTicket {
+  id              String         @id @default(cuid())
+  userId          String
+  subject         String
+  status          TicketStatus   @default(OPEN)
+  priority        TicketPriority @default(NORMAL)
+  assignedAdminId String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  user            User           @relation(fields: [userId], references: [id])
+  messages        SupportMessage[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model SupportMessage {
+  id            String   @id @default(cuid())
+  ticketId      String
+  senderUserId  String?
+  senderAdminId String?
+  message       String   @db.Text
+  createdAt     DateTime @default(now())
+
+  ticket        SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+}
+
+// ---------------------------------------------------------------------------
+// Audit log
+// ---------------------------------------------------------------------------
+
+model AuditLog {
+  id            String   @id @default(cuid())
+  adminId       String?
+  actorType     String   @default("ADMIN") // ADMIN | SYSTEM
+  action        String
+  targetType    String
+  targetId      String?
+  previousState Json?
+  newState      Json?
+  reason        String?  @db.Text
+  ip            String?
+  userAgent     String?
+  createdAt     DateTime @default(now())
+
+  admin         User?    @relation("AuditActor", fields: [adminId], references: [id])
+
+  @@index([targetType, targetId])
+  @@index([adminId])
+}
