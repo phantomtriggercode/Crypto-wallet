@@ -2,6 +2,7 @@ import "server-only";
 import { mkdir, writeFile, readFile, unlink } from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
+import { AppError } from "@/lib/api";
 
 // Private, non-web-served storage root. Never place KYC documents under /public.
 const STORAGE_ROOT = process.env.PRIVATE_STORAGE_PATH || path.join(process.cwd(), "storage");
@@ -39,9 +40,9 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 export function validateUpload(file: File) {
   if (!ALLOWED_MIME.has(file.type)) {
-    throw new Error("Unsupported file type. Please upload a PNG, JPG, WEBP, or PDF.");
+    throw new AppError("Unsupported file type. Please upload a PNG, JPG, WEBP, or PDF.", 422);
   }
   if (file.size > MAX_FILE_SIZE) {
-    throw new Error("File is too large. Maximum size is 10MB.");
+    throw new AppError("File is too large. Maximum size is 10MB.", 422);
   }
 }

@@ -153,8 +153,33 @@ This platform is intentionally built so it **cannot** silently become a real fin
 
 ## Security testing
 
-A normal user cannot call an `/api/admin/*` route (every one calls `requireAdmin()`), a
-`CONTENT_ADMIN` cannot approve withdrawals or credit balances (routes that touch money require
-`FINANCE_ADMIN` or `SUPER_ADMIN`), a `KYC_ADMIN` cannot modify balances, and a user can never write
-to their own ledger — the only ledger-writing paths are the approval/manual-adjustment routes,
-all of which are admin-gated.
+An automated integration suite in `tests/` verifies this against the real running app (not
+mocks) — it spins up a dev server, hits real API routes, and checks the database:
+
+```bash
+npm test
+```
+
+What it covers:
+
+- **Authorization boundaries** (`tests/authorization.test.ts`) — a normal user cannot call any
+  `/api/admin/*` route; a `CONTENT_ADMIN` cannot approve withdrawals, approve deposits, or credit
+  balances; a `KYC_ADMIN` cannot credit/debit balances or approve deposits; only `SUPER_ADMIN` can
+  change another admin's roles; there is no endpoint through which a user can write to their own
+  ledger.
+- **Auth & sessions** (`tests/auth.test.ts`) — unverified accounts can't log in, registration
+  doesn't leak whether an email exists, session cookies are `HttpOnly`/`SameSite=Lax`, password
+  reset revokes all existing sessions, revoked/logged-out sessions stop authenticating, and
+  repeated failed logins get rate-limited.
+- **KYC privacy** (`tests/kyc-privacy.test.ts`) — a KYC document is only readable by its owner or
+  an authorized `KYC_ADMIN`/`SUPER_ADMIN` (never another user or a differently-scoped admin), and
+  disallowed file types are rejected on upload.
+- **Input safety** (`tests/input-safety.test.ts`) — a static check that the codebase never uses
+  `dangerouslySetInnerHTML` or unparameterized raw SQL (`$queryRawUnsafe`/`$executeRawUnsafe`),
+  plus live probes that SQL-metacharacter and script-tag payloads are handled as inert data, not
+  executed or used to corrupt a query.
+
+This suite already caught and fixed two real bugs during development: the edge `proxy.ts` was
+redirecting unauthenticated `/api/**` calls to the login *page* (a 307) instead of letting the
+route handler return a proper 401/403 JSON response, and a rejected KYC file upload was surfacing
+as a generic 500 instead of a 422 with the actual validation message.
