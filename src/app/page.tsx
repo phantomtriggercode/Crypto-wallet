@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { ArrowRight, ShieldCheck, Lock, ScrollText } from "lucide-react";
 import { getSettings } from "@/lib/settings";
 import { getHomepageContent, HOMEPAGE_SECTION_KEYS, HomepageSectionKey } from "@/lib/cms";
@@ -13,6 +14,15 @@ import { WidgetGrid } from "@/components/widgets/widget-grid";
 
 // Reads live, admin-editable content (settings, CMS, prices, widgets) — never prerender statically.
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const content = await getHomepageContent();
+  if (!content.metaTitle && !content.metaDescription) return {};
+  return {
+    title: content.metaTitle || undefined,
+    description: content.metaDescription || undefined,
+  };
+}
 
 export default async function HomePage() {
   const [settings, content, assets, news] = await Promise.all([

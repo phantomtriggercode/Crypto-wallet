@@ -12,6 +12,8 @@ type StaticPageContent = {
   title: string;
   intro: string;
   sections: { heading: string; body: string }[];
+  metaTitle: string;
+  metaDescription: string;
 };
 
 export default function AdminCmsPageEditor({ params }: { params: Promise<{ slug: string }> }) {
@@ -102,6 +104,27 @@ export default function AdminCmsPageEditor({ params }: { params: Promise<{ slug:
           </div>
         ))}
         {content.sections.length === 0 && <p className="text-xs text-muted">No sections yet — this page will just show the intro text.</p>}
+      </Card>
+
+      <Card className="space-y-3">
+        <h2 className="text-sm font-semibold">SEO</h2>
+        <div>
+          <Label>Meta title (leave blank to use page title)</Label>
+          <Input
+            maxLength={70}
+            value={content.metaTitle}
+            onChange={(e) => setContent({ ...content, metaTitle: e.target.value })}
+          />
+        </div>
+        <div>
+          <Label>Meta description (leave blank to use intro text)</Label>
+          <Textarea
+            rows={2}
+            maxLength={160}
+            value={content.metaDescription}
+            onChange={(e) => setContent({ ...content, metaDescription: e.target.value })}
+          />
+        </div>
       </Card>
     </div>
   );

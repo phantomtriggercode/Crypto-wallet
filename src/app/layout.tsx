@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 import { getSettings } from "@/lib/settings";
+import { CustomCode } from "@/components/site/custom-code";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,16 +15,29 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSettings().catch(() => null);
   const siteName = settings?.siteName ?? "Your Wallet";
+  const title = settings?.seoMetaTitle || siteName;
+  const description = settings?.seoMetaDescription || settings?.siteTagline || "Educational cryptocurrency wallet platform.";
   return {
-    title: { default: siteName, template: `%s · ${siteName}` },
-    description: settings?.siteTagline ?? "Educational cryptocurrency wallet platform.",
+    title: { default: title, template: `%s · ${siteName}` },
+    description,
+    robots: settings?.seoRobotsIndexing === false ? { index: false, follow: false } : { index: true, follow: true },
+    openGraph: {
+      title,
+      description,
+      siteName,
+      images: settings?.seoOgImageUrl ? [{ url: settings.seoOgImageUrl }] : undefined,
+    },
   };
 }
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const settings = await getSettings().catch(() => null);
+
   return (
     <html
       lang="en"
@@ -32,6 +46,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col bg-background text-foreground">
         {children}
         <Toaster theme="dark" position="top-right" richColors />
+        {settings && <CustomCode head={settings.customHeadCode} bodyEnd={settings.customBodyEndCode} />}
       </body>
     </html>
   );

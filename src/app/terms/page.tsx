@@ -1,11 +1,17 @@
+import type { Metadata } from "next";
 import { getSettings } from "@/lib/settings";
 import { getStaticPage } from "@/lib/cms";
 import { SiteNavbar } from "@/components/site/navbar";
 import { SiteFooter } from "@/components/site/footer";
 import { StaticPageBody } from "@/components/site/static-page";
+import { staticPageMetadata } from "@/lib/staticPageMetadata";
 
 // Reads live, admin-editable content — never prerender statically.
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata(): Promise<Metadata> {
+  return staticPageMetadata(await getStaticPage("terms"));
+}
 
 export default async function TermsPage() {
   const [settings, content] = await Promise.all([getSettings(), getStaticPage("terms")]);

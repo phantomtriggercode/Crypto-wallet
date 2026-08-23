@@ -25,6 +25,8 @@ type HomepageContent = {
   showSecuritySection: boolean;
   showFaqSection: boolean;
   sectionOrder: SectionKey[];
+  metaTitle: string;
+  metaDescription: string;
 };
 
 const SECTION_LABELS: Record<SectionKey, string> = {
@@ -224,6 +226,27 @@ export default function CmsHomepagePage() {
             </div>
           );
         })}
+      </Card>
+
+      <Card className="space-y-3">
+        <h2 className="text-sm font-semibold">SEO</h2>
+        <div>
+          <Label>Meta title (leave blank to use site name)</Label>
+          <Input
+            maxLength={70}
+            value={content.metaTitle}
+            onChange={(e) => setContent({ ...content, metaTitle: e.target.value })}
+          />
+        </div>
+        <div>
+          <Label>Meta description (leave blank to use site tagline)</Label>
+          <Textarea
+            rows={2}
+            maxLength={160}
+            value={content.metaDescription}
+            onChange={(e) => setContent({ ...content, metaDescription: e.target.value })}
+          />
+        </div>
       </Card>
     </div>
   );

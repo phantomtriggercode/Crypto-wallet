@@ -26,6 +26,12 @@ export type AppSettings = {
   maxDepositUsd: number;
   navLinks: { label: string; href: string }[];
   footerTagline: string;
+  seoMetaTitle: string;
+  seoMetaDescription: string;
+  seoOgImageUrl: string | null;
+  seoRobotsIndexing: boolean;
+  customHeadCode: string;
+  customBodyEndCode: string;
   maintenance: {
     website: boolean;
     deposits: boolean;
@@ -65,6 +71,12 @@ export const DEFAULT_SETTINGS: AppSettings = {
     { label: "FAQ", href: "/faq" },
   ],
   footerTagline: "Educational cryptocurrency wallet platform. No real funds or blockchain transactions.",
+  seoMetaTitle: "",
+  seoMetaDescription: "",
+  seoOgImageUrl: null,
+  seoRobotsIndexing: true,
+  customHeadCode: "",
+  customBodyEndCode: "",
   maintenance: {
     website: false,
     deposits: false,

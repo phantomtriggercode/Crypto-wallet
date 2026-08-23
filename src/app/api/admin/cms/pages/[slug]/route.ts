@@ -9,6 +9,8 @@ const schema = z.object({
   title: z.string().trim().min(1).max(150),
   intro: z.string().trim().max(5000),
   sections: z.array(z.object({ heading: z.string().trim().max(150), body: z.string().trim().max(5000) })).max(30),
+  metaTitle: z.string().trim().max(70).optional().default(""),
+  metaDescription: z.string().trim().max(160).optional().default(""),
 });
 
 function isValidSlug(slug: string): slug is StaticPageSlug {

@@ -77,6 +77,7 @@ const SECTIONS: { title: string; icon: React.ComponentType<{ className?: string 
       { href: "/admin/cms/navigation", label: "Navigation" },
       { href: "/admin/cms/widgets", label: "Widgets" },
       { href: "/admin/cms/branding", label: "Branding" },
+      { href: "/admin/cms/seo", label: "SEO & Custom Code" },
     ],
   },
   {
