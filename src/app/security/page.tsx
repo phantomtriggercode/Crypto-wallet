@@ -11,9 +11,9 @@ export default async function SecurityPage() {
   const [settings, content] = await Promise.all([getSettings(), getStaticPage("security")]);
   return (
     <div className="min-h-screen bg-background">
-      <SiteNavbar siteName={settings.siteName} logoUrl={settings.logoUrl} />
+      <SiteNavbar siteName={settings.siteName} logoUrl={settings.logoUrl} navLinks={settings.navLinks} />
       <StaticPageBody content={content} />
-      <SiteFooter siteName={settings.siteName} />
+      <SiteFooter siteName={settings.siteName} tagline={settings.footerTagline} navLinks={settings.navLinks} />
     </div>
   );
 }

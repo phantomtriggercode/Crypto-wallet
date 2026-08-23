@@ -31,7 +31,7 @@ export default async function CoinPage({ params }: { params: Promise<{ symbol: s
 
   return (
     <div className="min-h-screen bg-background">
-      <SiteNavbar siteName={settings.siteName} logoUrl={settings.logoUrl} />
+      <SiteNavbar siteName={settings.siteName} logoUrl={settings.logoUrl} navLinks={settings.navLinks} />
       <div className="mx-auto max-w-3xl space-y-6 px-4 py-10">
         <div className="flex items-center justify-between">
           <div>
@@ -86,7 +86,7 @@ export default async function CoinPage({ params }: { params: Promise<{ symbol: s
           </div>
         </Card>
       </div>
-      <SiteFooter siteName={settings.siteName} />
+      <SiteFooter siteName={settings.siteName} tagline={settings.footerTagline} navLinks={settings.navLinks} />
     </div>
   );
 }

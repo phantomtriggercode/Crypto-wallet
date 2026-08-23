@@ -17,7 +17,7 @@ export default async function MarketPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SiteNavbar siteName={settings.siteName} logoUrl={settings.logoUrl} />
+      <SiteNavbar siteName={settings.siteName} logoUrl={settings.logoUrl} navLinks={settings.navLinks} />
       <div className="mx-auto max-w-4xl px-4 py-10">
         <h1 className="mb-6 text-2xl font-semibold">Market</h1>
         <Card className="divide-y divide-border p-0">
@@ -48,7 +48,7 @@ export default async function MarketPage() {
           ))}
         </Card>
       </div>
-      <SiteFooter siteName={settings.siteName} />
+      <SiteFooter siteName={settings.siteName} tagline={settings.footerTagline} navLinks={settings.navLinks} />
     </div>
   );
 }

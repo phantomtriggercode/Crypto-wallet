@@ -1,20 +1,36 @@
 import Link from "next/link";
 
-export function SiteFooter({ siteName }: { siteName: string }) {
+type NavLink = { label: string; href: string };
+
+export function SiteFooter({
+  siteName,
+  tagline,
+  navLinks,
+}: {
+  siteName: string;
+  tagline?: string;
+  navLinks?: NavLink[];
+}) {
+  const links = navLinks?.length ? navLinks : [{ label: "Market", href: "/market" }, { label: "News", href: "/news" }];
+
   return (
     <footer className="border-t border-border bg-surface/50">
       <div className="mx-auto max-w-6xl px-4 py-10 text-sm text-muted">
         <div className="grid gap-8 sm:grid-cols-4">
           <div>
             <p className="mb-2 font-semibold text-foreground">{siteName}</p>
-            <p className="text-xs">Educational cryptocurrency wallet platform. No real funds or blockchain transactions.</p>
+            <p className="text-xs">{tagline ?? "Educational cryptocurrency wallet platform. No real funds or blockchain transactions."}</p>
           </div>
           <div>
             <p className="mb-2 font-medium text-foreground">Product</p>
             <ul className="space-y-1">
-              <li><Link href="/market" className="hover:text-foreground">Market</Link></li>
-              <li><Link href="/#escrow" className="hover:text-foreground">Escrow</Link></li>
-              <li><Link href="/news" className="hover:text-foreground">News</Link></li>
+              {links.map((link) => (
+                <li key={link.href}>
+                  <Link href={link.href} className="hover:text-foreground">
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
               <li><Link href="/security" className="hover:text-foreground">Security</Link></li>
             </ul>
           </div>

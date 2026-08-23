@@ -24,6 +24,8 @@ export type AppSettings = {
   maxWithdrawalUsd: number;
   dailyWithdrawalLimitUsd: number;
   maxDepositUsd: number;
+  navLinks: { label: string; href: string }[];
+  footerTagline: string;
   maintenance: {
     website: boolean;
     deposits: boolean;
@@ -56,6 +58,13 @@ export const DEFAULT_SETTINGS: AppSettings = {
   maxWithdrawalUsd: 50000,
   dailyWithdrawalLimitUsd: 100000,
   maxDepositUsd: 250000,
+  navLinks: [
+    { label: "Market", href: "/market" },
+    { label: "Escrow", href: "/#escrow" },
+    { label: "News", href: "/news" },
+    { label: "FAQ", href: "/faq" },
+  ],
+  footerTagline: "Educational cryptocurrency wallet platform. No real funds or blockchain transactions.",
   maintenance: {
     website: false,
     deposits: false,

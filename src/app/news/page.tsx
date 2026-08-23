@@ -16,7 +16,7 @@ export default async function NewsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SiteNavbar siteName={settings.siteName} logoUrl={settings.logoUrl} />
+      <SiteNavbar siteName={settings.siteName} logoUrl={settings.logoUrl} navLinks={settings.navLinks} />
       <div className="mx-auto max-w-3xl space-y-4 px-4 py-10">
         <h1 className="text-2xl font-semibold">Crypto News</h1>
         {articles.length === 0 && <p className="text-sm text-muted">No news articles yet.</p>}
@@ -39,7 +39,7 @@ export default async function NewsPage() {
           </Card>
         ))}
       </div>
-      <SiteFooter siteName={settings.siteName} />
+      <SiteFooter siteName={settings.siteName} tagline={settings.footerTagline} navLinks={settings.navLinks} />
     </div>
   );
 }

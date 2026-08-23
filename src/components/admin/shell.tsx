@@ -73,6 +73,7 @@ const SECTIONS: { title: string; icon: React.ComponentType<{ className?: string 
     items: [
       { href: "/admin/cms/homepage", label: "Homepage" },
       { href: "/admin/cms/pages", label: "Pages" },
+      { href: "/admin/cms/navigation", label: "Navigation" },
       { href: "/admin/cms/widgets", label: "Widgets" },
       { href: "/admin/cms/branding", label: "Branding" },
     ],

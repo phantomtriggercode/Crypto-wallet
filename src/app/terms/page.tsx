@@ -11,9 +11,9 @@ export default async function TermsPage() {
   const [settings, content] = await Promise.all([getSettings(), getStaticPage("terms")]);
   return (
     <div className="min-h-screen bg-background">
-      <SiteNavbar siteName={settings.siteName} logoUrl={settings.logoUrl} />
+      <SiteNavbar siteName={settings.siteName} logoUrl={settings.logoUrl} navLinks={settings.navLinks} />
       <StaticPageBody content={content} />
-      <SiteFooter siteName={settings.siteName} />
+      <SiteFooter siteName={settings.siteName} tagline={settings.footerTagline} navLinks={settings.navLinks} />
     </div>
   );
 }

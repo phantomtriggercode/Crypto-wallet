@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Textarea } from "@/components/ui/input";
 import { apiFetch, ApiClientError } from "@/lib/apiClient";
+
+type SectionKey = "features" | "widgets" | "market" | "escrow" | "security" | "news" | "faq";
 
 type HomepageContent = {
   heroTitle: string;
@@ -16,9 +18,32 @@ type HomepageContent = {
   features: { title: string; description: string }[];
   stats: { label: string; value: string }[];
   faqs: { question: string; answer: string }[];
+  showFeaturesSection: boolean;
   showEscrowSection: boolean;
   showMarketSection: boolean;
   showNewsSection: boolean;
+  showSecuritySection: boolean;
+  showFaqSection: boolean;
+  sectionOrder: SectionKey[];
+};
+
+const SECTION_LABELS: Record<SectionKey, string> = {
+  features: "Features",
+  widgets: "Widgets",
+  market: "Market overview",
+  escrow: "Escrow",
+  security: "Security",
+  news: "Crypto news",
+  faq: "FAQ",
+};
+
+const SECTION_TOGGLE_KEY: Partial<Record<SectionKey, keyof HomepageContent>> = {
+  features: "showFeaturesSection",
+  market: "showMarketSection",
+  escrow: "showEscrowSection",
+  security: "showSecuritySection",
+  news: "showNewsSection",
+  faq: "showFaqSection",
 };
 
 export default function CmsHomepagePage() {
@@ -153,13 +178,52 @@ export default function CmsHomepagePage() {
       </Card>
 
       <Card className="space-y-2">
-        <h2 className="text-sm font-semibold">Sections</h2>
-        {(["showEscrowSection", "showMarketSection", "showNewsSection"] as const).map((key) => (
-          <label key={key} className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={content[key]} onChange={(e) => setContent({ ...content, [key]: e.target.checked })} />
-            {key.replace("show", "").replace("Section", "")}
-          </label>
-        ))}
+        <h2 className="mb-1 text-sm font-semibold">Sections</h2>
+        <p className="mb-2 text-xs text-muted">Order the sections that appear below the hero, and toggle each on or off.</p>
+        {content.sectionOrder.map((key, i) => {
+          const toggleKey = SECTION_TOGGLE_KEY[key];
+          const enabled = toggleKey ? Boolean(content[toggleKey]) : true;
+          return (
+            <div key={key} className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
+              <span className="text-sm">{SECTION_LABELS[key]}</span>
+              <div className="flex items-center gap-1">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={i === 0}
+                  onClick={() => {
+                    const order = [...content.sectionOrder];
+                    [order[i - 1], order[i]] = [order[i], order[i - 1]];
+                    setContent({ ...content, sectionOrder: order });
+                  }}
+                >
+                  <ArrowUp className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={i === content.sectionOrder.length - 1}
+                  onClick={() => {
+                    const order = [...content.sectionOrder];
+                    [order[i + 1], order[i]] = [order[i], order[i + 1]];
+                    setContent({ ...content, sectionOrder: order });
+                  }}
+                >
+                  <ArrowDown className="h-3.5 w-3.5" />
+                </Button>
+                {toggleKey && (
+                  <Button
+                    size="sm"
+                    variant={enabled ? "primary" : "secondary"}
+                    onClick={() => setContent({ ...content, [toggleKey]: !enabled })}
+                  >
+                    {enabled ? "Enabled" : "Disabled"}
+                  </Button>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </Card>
     </div>
   );

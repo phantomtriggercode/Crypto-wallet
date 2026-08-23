@@ -11,7 +11,7 @@ export default async function FaqPage() {
   const [settings, content] = await Promise.all([getSettings(), getHomepageContent()]);
   return (
     <div className="min-h-screen bg-background">
-      <SiteNavbar siteName={settings.siteName} logoUrl={settings.logoUrl} />
+      <SiteNavbar siteName={settings.siteName} logoUrl={settings.logoUrl} navLinks={settings.navLinks} />
       <div className="mx-auto max-w-2xl space-y-4 px-4 py-10">
         <h1 className="text-2xl font-semibold">Frequently Asked Questions</h1>
         {content.faqs.map((f) => (
@@ -21,7 +21,7 @@ export default async function FaqPage() {
           </Card>
         ))}
       </div>
-      <SiteFooter siteName={settings.siteName} />
+      <SiteFooter siteName={settings.siteName} tagline={settings.footerTagline} navLinks={settings.navLinks} />
     </div>
   );
 }

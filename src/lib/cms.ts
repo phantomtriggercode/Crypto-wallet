@@ -1,6 +1,9 @@
 import "server-only";
 import { db } from "@/lib/db";
 
+export const HOMEPAGE_SECTION_KEYS = ["features", "widgets", "market", "escrow", "security", "news", "faq"] as const;
+export type HomepageSectionKey = (typeof HOMEPAGE_SECTION_KEYS)[number];
+
 export type HomepageContent = {
   heroTitle: string;
   heroSubtitle: string;
@@ -9,9 +12,14 @@ export type HomepageContent = {
   features: { title: string; description: string }[];
   stats: { label: string; value: string }[];
   faqs: { question: string; answer: string }[];
+  showFeaturesSection: boolean;
   showEscrowSection: boolean;
   showMarketSection: boolean;
   showNewsSection: boolean;
+  showSecuritySection: boolean;
+  showFaqSection: boolean;
+  /** Order in which enabled sections render below the hero. Any key missing from this list is appended at the end. */
+  sectionOrder: HomepageSectionKey[];
 };
 
 export const DEFAULT_HOMEPAGE: HomepageContent = {
@@ -35,9 +43,13 @@ export const DEFAULT_HOMEPAGE: HomepageContent = {
     { question: "Is this a real crypto wallet?", answer: "No — this is an educational simulation. No blockchain transactions are broadcast and no real funds are held." },
     { question: "How are deposits processed?", answer: "Deposits are manually reviewed and approved by an administrator, then credited to your internal ledger balance." },
   ],
+  showFeaturesSection: true,
   showEscrowSection: true,
   showMarketSection: true,
   showNewsSection: true,
+  showSecuritySection: true,
+  showFaqSection: true,
+  sectionOrder: ["features", "widgets", "market", "escrow", "security", "news", "faq"],
 };
 
 export async function getHomepageContent(): Promise<HomepageContent> {
