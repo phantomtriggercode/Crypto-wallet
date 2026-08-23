@@ -6,6 +6,7 @@ import { SiteNavbar } from "@/components/site/navbar";
 import { SiteFooter } from "@/components/site/footer";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { AssetIcon } from "@/components/ui/asset-icon";
 import { PriceChart } from "@/components/market/price-chart";
 import { formatUsd } from "@/lib/format";
 
@@ -34,15 +35,18 @@ export default async function CoinPage({ params }: { params: Promise<{ symbol: s
       <SiteNavbar siteName={settings.siteName} logoUrl={settings.logoUrl} navLinks={settings.navLinks} />
       <div className="mx-auto max-w-3xl space-y-6 px-4 py-10">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold">
-              {asset.name} <span className="text-muted">({asset.symbol})</span>
-            </h1>
-            <p className="mt-1 text-3xl font-semibold">{formatUsd(asset.demoPrice.toString())}</p>
-            <p className={`text-sm ${Number(asset.priceChange24h) >= 0 ? "text-success" : "text-danger"}`}>
-              {Number(asset.priceChange24h) >= 0 ? "+" : ""}
-              {Number(asset.priceChange24h).toFixed(2)}% (24h)
-            </p>
+          <div className="flex items-center gap-3">
+            <AssetIcon symbol={asset.symbol} iconUrl={asset.iconUrl} size={44} />
+            <div>
+              <h1 className="text-2xl font-semibold">
+                {asset.name} <span className="text-muted">({asset.symbol})</span>
+              </h1>
+              <p className="mt-1 text-3xl font-semibold">{formatUsd(asset.demoPrice.toString())}</p>
+              <p className={`text-sm ${Number(asset.priceChange24h) >= 0 ? "text-success" : "text-danger"}`}>
+                {Number(asset.priceChange24h) >= 0 ? "+" : ""}
+                {Number(asset.priceChange24h).toFixed(2)}% (24h)
+              </p>
+            </div>
           </div>
           <div className="flex gap-2">
             <Link href="/wallet/deposit">

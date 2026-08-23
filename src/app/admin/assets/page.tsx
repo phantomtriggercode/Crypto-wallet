@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
+import { AssetIcon } from "@/components/ui/asset-icon";
 import { apiFetch, ApiClientError } from "@/lib/apiClient";
 
 type Network = { id: string; name: string; symbol: string; depositAddress: string; enabled: boolean; minDeposit: string; confirmationTimerMinutes: number };
@@ -12,6 +13,7 @@ type Asset = {
   id: string;
   symbol: string;
   name: string;
+  iconUrl: string | null;
   enabled: boolean;
   depositEnabled: boolean;
   withdrawalEnabled: boolean;
@@ -107,11 +109,14 @@ export default function AdminAssetsPage() {
       {assets.map((a) => (
         <Card key={a.id}>
           <div className="flex items-center justify-between">
-            <button className="text-left" onClick={() => setExpanded(expanded === a.id ? null : a.id)}>
-              <p className="text-sm font-medium">
-                {a.symbol} — {a.name}
-              </p>
-              <p className="text-xs text-muted">${a.demoPrice}</p>
+            <button className="flex items-center gap-3 text-left" onClick={() => setExpanded(expanded === a.id ? null : a.id)}>
+              <AssetIcon symbol={a.symbol} iconUrl={a.iconUrl} size={32} />
+              <div>
+                <p className="text-sm font-medium">
+                  {a.symbol} — {a.name}
+                </p>
+                <p className="text-xs text-muted">${a.demoPrice}</p>
+              </div>
             </button>
             <div className="flex flex-wrap gap-1">
               <Flag label="Enabled" value={a.enabled} onChange={(v) => updateAsset(a.id, { enabled: v })} />
@@ -124,6 +129,10 @@ export default function AdminAssetsPage() {
 
           {expanded === a.id && (
             <div className="mt-4 space-y-4 border-t border-border pt-4">
+              <div className="flex items-center gap-3">
+                <AssetIcon symbol={a.symbol} iconUrl={a.iconUrl} size={48} />
+                <IconUploader onUploaded={(url) => updateAsset(a.id, { iconUrl: url })} />
+              </div>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <NumberField label="Demo price" defaultValue={a.demoPrice} onSave={(v) => updateAsset(a.id, { demoPrice: v as never })} />
                 <NumberField label="24h change %" defaultValue={a.priceChange24h} onSave={(v) => updateAsset(a.id, { priceChange24h: v as never })} />
@@ -189,6 +198,38 @@ function NumberField({ label, defaultValue, onSave }: { label: string; defaultVa
           Save
         </Button>
       </div>
+    </div>
+  );
+}
+
+function IconUploader({ onUploaded }: { onUploaded: (url: string) => void }) {
+  const [uploading, setUploading] = useState(false);
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.set("file", file);
+      form.set("folder", "asset-icons");
+      const res = await fetch("/api/admin/media", { method: "POST", body: form });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Upload failed");
+      onUploaded(data.media.url);
+      toast.success("Icon updated.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div>
+      <Label>Icon</Label>
+      <input type="file" accept="image/*" disabled={uploading} onChange={handleFile} className="text-xs" />
     </div>
   );
 }

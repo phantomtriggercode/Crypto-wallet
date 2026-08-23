@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/session";
 import { getWalletSummary } from "@/lib/ledger";
 import { db } from "@/lib/db";
 import { Card } from "@/components/ui/card";
+import { AssetIcon } from "@/components/ui/asset-icon";
 import { formatUsd, formatAmount, timeAgo } from "@/lib/format";
 import { KycBanner } from "@/components/wallet/kyc-banner";
 import { WidgetGrid } from "@/components/widgets/widget-grid";
@@ -65,9 +66,7 @@ export default async function WalletDashboardPage() {
             {topHoldings.map((h) => (
               <div key={h.asset.id} className="flex items-center justify-between rounded-xl px-2 py-3 hover:bg-surface-2/60">
                 <div className="flex items-center gap-3">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-2 text-xs font-semibold">
-                    {h.asset.symbol.slice(0, 3)}
-                  </span>
+                  <AssetIcon symbol={h.asset.symbol} iconUrl={h.asset.iconUrl} size={36} />
                   <div>
                     <p className="text-sm font-medium">{h.asset.name}</p>
                     <p className="text-xs text-muted">

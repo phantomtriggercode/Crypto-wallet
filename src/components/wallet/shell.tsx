@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/apiClient";
+import { GlobalSearch } from "@/components/search/global-search";
 
 const NAV_ITEMS = [
   { href: "/wallet", label: "Home", icon: Home },
@@ -75,6 +76,9 @@ export function WalletShell({
             {settings.siteName.slice(0, 1)}
           </span>
           <span className="font-semibold">{settings.siteName}</span>
+        </div>
+        <div className="px-3 pb-2">
+          <GlobalSearch scope="user" />
         </div>
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2">
           {NAV_ITEMS.map((item) => {

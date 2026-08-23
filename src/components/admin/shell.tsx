@@ -20,6 +20,7 @@ import {
   ArrowLeftCircle,
 } from "lucide-react";
 import { apiFetch } from "@/lib/apiClient";
+import { GlobalSearch } from "@/components/search/global-search";
 
 const SECTIONS: { title: string; icon: React.ComponentType<{ className?: string }>; items: { href: string; label: string }[] }[] = [
   { title: "Dashboard", icon: LayoutDashboard, items: [{ href: "/admin", label: "Overview" }] },
@@ -93,7 +94,14 @@ const SECTIONS: { title: string; icon: React.ComponentType<{ className?: string 
     icon: ShieldAlert,
     items: [{ href: "/admin/audit-logs", label: "Audit Logs" }],
   },
-  { title: "Settings", icon: Settings, items: [{ href: "/admin/settings", label: "General" }] },
+  {
+    title: "Settings",
+    icon: Settings,
+    items: [
+      { href: "/admin/settings", label: "General" },
+      { href: "/admin/export", label: "Data Export" },
+    ],
+  },
 ];
 
 export function AdminShell({
@@ -123,6 +131,9 @@ export function AdminShell({
             {settings.siteName.slice(0, 1)}
           </span>
           <span className="font-semibold">{settings.siteName} Admin</span>
+        </div>
+        <div className="px-3 pb-2">
+          <GlobalSearch scope="admin" />
         </div>
         <nav className="flex-1 space-y-4 overflow-y-auto px-3 py-2">
           {SECTIONS.map((section) => (

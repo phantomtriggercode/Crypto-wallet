@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { SiteNavbar } from "@/components/site/navbar";
 import { SiteFooter } from "@/components/site/footer";
 import { Card } from "@/components/ui/card";
+import { AssetIcon } from "@/components/ui/asset-icon";
 import { formatUsd } from "@/lib/format";
 
 // Reads live, admin-editable content — never prerender statically.
@@ -30,9 +31,7 @@ export default async function MarketPage() {
           {assets.map((a) => (
             <Link key={a.id} href={`/market/${a.symbol.toLowerCase()}`} className="grid grid-cols-4 items-center gap-2 px-5 py-4 hover:bg-surface-2/60">
               <div className="flex items-center gap-3">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-2 text-xs font-semibold">
-                  {a.symbol.slice(0, 3)}
-                </span>
+                <AssetIcon symbol={a.symbol} iconUrl={a.iconUrl} size={32} />
                 <div>
                   <p className="text-sm font-medium">{a.symbol}</p>
                   <p className="text-xs text-muted">{a.name}</p>

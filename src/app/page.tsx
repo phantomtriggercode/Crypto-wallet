@@ -7,6 +7,7 @@ import { SiteNavbar } from "@/components/site/navbar";
 import { SiteFooter } from "@/components/site/footer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { AssetIcon } from "@/components/ui/asset-icon";
 import { formatUsd } from "@/lib/format";
 import { WidgetGrid } from "@/components/widgets/widget-grid";
 
@@ -55,9 +56,12 @@ export default async function HomePage() {
             {assets.map((a) => (
               <Link key={a.id} href={`/market/${a.symbol.toLowerCase()}`}>
                 <Card className="flex items-center justify-between transition hover:border-primary/40">
-                  <div>
-                    <p className="text-sm font-medium">{a.symbol}</p>
-                    <p className="text-xs text-muted">{a.name}</p>
+                  <div className="flex items-center gap-3">
+                    <AssetIcon symbol={a.symbol} iconUrl={a.iconUrl} size={32} />
+                    <div>
+                      <p className="text-sm font-medium">{a.symbol}</p>
+                      <p className="text-xs text-muted">{a.name}</p>
+                    </div>
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-medium">{formatUsd(a.demoPrice.toString())}</p>

@@ -42,6 +42,6 @@ next-env.d.ts
 
 /src/generated/prisma
 
-# private uploaded files (KYC documents, media library) — never commit real uploads
+# uploaded files (KYC documents, media library) — served dynamically via API routes,
+# never placed under /public — never commit real uploads
 /storage/
-/public/uploads/

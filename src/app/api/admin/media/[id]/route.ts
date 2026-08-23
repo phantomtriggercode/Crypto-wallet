@@ -1,8 +1,7 @@
-import { unlink } from "node:fs/promises";
-import path from "node:path";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/session";
 import { apiOk, apiError, handleApiError } from "@/lib/api";
+import { deletePrivateFile } from "@/lib/storage";
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -14,8 +13,9 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     if (!media) return apiError("Not found.", 404);
 
     await db.media.delete({ where: { id } });
-    const filePath = path.join(process.cwd(), "public", media.url);
-    await unlink(filePath).catch(() => undefined);
+
+    const storageKey = media.url.replace(/^\/api\/media\//, "");
+    await deletePrivateFile(storageKey);
 
     return apiOk({});
   } catch (err) {
