@@ -129,6 +129,22 @@ async function main() {
     await db.emailTemplate.upsert({ where: { key: t.key }, update: {}, create: t });
   }
 
+  console.log("Seeding default widgets...");
+  const widgetCount = await db.widget.count();
+  if (widgetCount === 0) {
+    await db.widget.createMany({
+      data: [
+        { type: "MARKET_OVERVIEW", title: "Market Overview", placement: "homepage", order: 0, config: { count: 6 } },
+        { type: "TRENDING", title: "Trending Coins", placement: "homepage", order: 1, config: { count: 5 } },
+        { type: "FEAR_GREED", title: "Fear & Greed Index", placement: "homepage", order: 2, config: { value: 55 } },
+        { type: "NEWS", title: "Latest News", placement: "homepage", order: 3, config: { count: 3 } },
+        { type: "PORTFOLIO_CHART", title: "Your Portfolio", placement: "dashboard", order: 0, config: {} },
+        { type: "ASSET_PRICE", title: "BTC Price", placement: "dashboard", order: 1, config: { symbol: "BTC" } },
+        { type: "CONVERSION_CALCULATOR", title: "Quick Convert", placement: "dashboard", order: 2, config: {} },
+      ],
+    });
+  }
+
   console.log("Seeding super admin...");
   const adminEmail = process.env.ADMIN_EMAIL;
   const adminExists = adminEmail ? await db.user.findUnique({ where: { email: adminEmail } }) : null;

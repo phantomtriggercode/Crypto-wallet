@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { Card } from "@/components/ui/card";
 import { formatUsd, formatAmount, timeAgo } from "@/lib/format";
 import { KycBanner } from "@/components/wallet/kyc-banner";
+import { WidgetGrid } from "@/components/widgets/widget-grid";
 
 export default async function WalletDashboardPage() {
   const user = await requireUser();
@@ -111,6 +112,8 @@ export default async function WalletDashboardPage() {
           </div>
         </Card>
       </div>
+
+      <WidgetGrid placement="dashboard" bare />
     </div>
   );
 }

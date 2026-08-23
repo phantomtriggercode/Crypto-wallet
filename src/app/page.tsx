@@ -8,6 +8,10 @@ import { SiteFooter } from "@/components/site/footer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { formatUsd } from "@/lib/format";
+import { WidgetGrid } from "@/components/widgets/widget-grid";
+
+// Reads live, admin-editable content (settings, CMS, prices, widgets) — never prerender statically.
+export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const [settings, content, assets, news] = await Promise.all([
@@ -64,6 +68,8 @@ export default async function HomePage() {
           ))}
         </div>
       </section>
+
+      <WidgetGrid placement="homepage" />
 
       {content.showMarketSection && (
         <section className="border-t border-border bg-surface/40 py-16">

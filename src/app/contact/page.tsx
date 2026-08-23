@@ -1,23 +1,18 @@
 import { getSettings } from "@/lib/settings";
+import { getStaticPage } from "@/lib/cms";
 import { SiteNavbar } from "@/components/site/navbar";
 import { SiteFooter } from "@/components/site/footer";
-import { Card } from "@/components/ui/card";
+import { StaticPageBody } from "@/components/site/static-page";
+
+// Reads live, admin-editable content — never prerender statically.
+export const dynamic = "force-dynamic";
 
 export default async function ContactPage() {
-  const settings = await getSettings();
+  const [settings, content] = await Promise.all([getSettings(), getStaticPage("contact")]);
   return (
     <div className="min-h-screen bg-background">
       <SiteNavbar siteName={settings.siteName} logoUrl={settings.logoUrl} />
-      <div className="mx-auto max-w-2xl space-y-4 px-4 py-10">
-        <h1 className="text-2xl font-semibold">Contact</h1>
-        <Card>
-          <p className="text-sm text-muted">
-            For support with your account, please log in and open a ticket from the Support Center. For general
-            inquiries, reach us at:
-          </p>
-          <p className="mt-3 text-sm font-medium">{settings.supportEmail}</p>
-        </Card>
-      </div>
+      <StaticPageBody content={content} extra={<p className="text-sm font-medium text-foreground">{settings.supportEmail}</p>} />
       <SiteFooter siteName={settings.siteName} />
     </div>
   );

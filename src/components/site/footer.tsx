@@ -15,6 +15,7 @@ export function SiteFooter({ siteName }: { siteName: string }) {
               <li><Link href="/market" className="hover:text-foreground">Market</Link></li>
               <li><Link href="/#escrow" className="hover:text-foreground">Escrow</Link></li>
               <li><Link href="/news" className="hover:text-foreground">News</Link></li>
+              <li><Link href="/security" className="hover:text-foreground">Security</Link></li>
             </ul>
           </div>
           <div>

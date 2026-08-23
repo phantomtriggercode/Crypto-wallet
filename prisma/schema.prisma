@@ -648,6 +648,23 @@ model Media {
   createdAt        DateTime @default(now())
 }
 
+// Configurable dashboard/homepage widgets (BTC price, market overview,
+// trending coins, Fear & Greed, gas prices, calculators, etc.). `config`
+// holds type-specific settings (e.g. which asset symbol, how many rows).
+model Widget {
+  id        String   @id @default(cuid())
+  type      String
+  title     String?
+  placement String   @default("homepage") // homepage | dashboard
+  enabled   Boolean  @default(true)
+  order     Int      @default(0)
+  config    Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([placement, enabled, order])
+}
+
 // ---------------------------------------------------------------------------
 // Market data & news
 // ---------------------------------------------------------------------------

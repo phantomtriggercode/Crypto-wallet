@@ -4,6 +4,9 @@ import { SiteNavbar } from "@/components/site/navbar";
 import { SiteFooter } from "@/components/site/footer";
 import { Card } from "@/components/ui/card";
 
+// Reads live, admin-editable content — never prerender statically.
+export const dynamic = "force-dynamic";
+
 export default async function FaqPage() {
   const [settings, content] = await Promise.all([getSettings(), getHomepageContent()]);
   return (

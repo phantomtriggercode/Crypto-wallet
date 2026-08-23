@@ -5,6 +5,9 @@ import { SiteFooter } from "@/components/site/footer";
 import { Card } from "@/components/ui/card";
 import { formatDate } from "@/lib/format";
 
+// Reads live, admin-editable content — never prerender statically.
+export const dynamic = "force-dynamic";
+
 export default async function NewsPage() {
   const [settings, articles] = await Promise.all([
     getSettings(),

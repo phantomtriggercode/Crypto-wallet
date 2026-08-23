@@ -9,6 +9,9 @@ import { Button } from "@/components/ui/button";
 import { PriceChart } from "@/components/market/price-chart";
 import { formatUsd } from "@/lib/format";
 
+// Reads live, admin-editable content — never prerender statically.
+export const dynamic = "force-dynamic";
+
 export default async function CoinPage({ params }: { params: Promise<{ symbol: string }> }) {
   const { symbol } = await params;
   const [settings, asset] = await Promise.all([
